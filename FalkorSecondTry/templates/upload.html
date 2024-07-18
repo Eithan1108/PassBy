@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Upload new File</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<h1>Upload new File</h1>
+<form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" name="file" id="fileInput">
+    <input type="submit" value="Upload">
+</form>
+<div id="result"></div>
+<script>
+    $(document).ready(function() {
+        $('#uploadForm').on('submit', function(event) {
+            event.preventDefault();
+            var formData = new FormData();
+            formData.append('file', $('#fileInput')[0].files[0]);
+
+            $.ajax({
+                url: '/upload',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    $('#result').html('Width: ' + response.width + ', Height: ' + response.height);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    $('#result').html('Error: ' + textStatus);
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>

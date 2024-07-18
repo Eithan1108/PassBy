@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>License Plate Recognition</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        #imageLog {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .loggedImage {
+            margin: 10px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .low-risk {
+            background-color: green;
+        }
+        .high-risk {
+            background-color: red;
+        }
+    </style>
+</head>
+<body>
+<h1>License Plate Recognition</h1>
+<video id="video" width="640" height="480" autoplay></video>
+<canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+<div id="result"></div>
+<div id="imageLog"></div>
+<script>
+    $(document).ready(function () {
+        // Get access to the camera
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({video: true}).then(function (stream) {
+                var video = document.getElementById('video');
+                video.srcObject = stream;
+                video.play();
+            });
+        }
+
+        function captureAndUpload() {
+            var video = document.getElementById('video');
+            var canvas = document.getElementById('canvas');
+            var context = canvas.getContext('2d');
+
+            context.drawImage(video, 0, 0, 640, 480);
+            var dataURL = canvas.toDataURL('image/jpeg');
+
+            $.ajax({
+                url: '/upload_base64',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({image: dataURL}),
+                success: function (response) {
+                    $('#result').html('License Plate: ' + response.license_plate);
+                    if (response.license_plate.length >= 2) {
+                        console.log(response)
+                        addImageToLog(response.filename, response.license_plate, response.result[1].Color,
+                            response.result[1].Car_Type, response.result[0]);
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    $('#result').html('Error: ' + textStatus);
+                }
+            });
+        }
+
+        function addImageToLog(filename, licensePlate, carColor, carType, carRisk) {
+            var table = $('#imageLog table');
+            if (table.length === 0) {
+                table = $('<table><thead><tr><th>License Plate</th><th>Image</th><th>Car Color</th><th>Car Type</th><th>Car Risk</th></tr></thead><tbody></tbody></table>');
+                $('#imageLog').prepend(table);
+            }
+            var riskClass = carRisk > 40 ? 'high-risk' : 'low-risk';
+            var newRow = $('<tr class="' + riskClass + '"><td>' + licensePlate + '</td><td>' +
+                '</td><td>' + carColor + '</td><td>' + carType + '</td><td>' + carRisk + '</td></tr>');
+            table.find('tbody').prepend(newRow);
+        }
+
+        setInterval(captureAndUpload, 1000);  // Capture and upload every 1 second
+    });
+</script>
+</body>
+</html>
