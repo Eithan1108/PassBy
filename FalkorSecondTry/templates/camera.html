@@ -1,10 +1,13 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <title>License Plate Recognition</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        body {
+            font-family: Consolas, sans-serif;
+        }
         #imageLog {
             display: flex;
             flex-wrap: wrap;
@@ -36,37 +39,19 @@
 </head>
 <body>
 <h1>License Plate Recognition</h1>
-<video id="video" width="640" height="480" autoplay></video>
-<canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
 <div id="result"></div>
 <div id="imageLog"></div>
 <script>
     $(document).ready(function () {
-        // Get access to the camera
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({video: true}).then(function (stream) {
-                var video = document.getElementById('video');
-                video.srcObject = stream;
-                video.play();
-            });
-        }
-
         function captureAndUpload() {
-            var video = document.getElementById('video');
-            var canvas = document.getElementById('canvas');
-            var context = canvas.getContext('2d');
-
-            context.drawImage(video, 0, 0, 640, 480);
-            var dataURL = canvas.toDataURL('image/jpeg');
-
             $.ajax({
                 url: '/upload_base64',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify({image: dataURL}),
+                data: JSON.stringify({image: ''}),
                 success: function (response) {
                     $('#result').html('License Plate: ' + response.license_plate);
-                    if (response.license_plate.length >= 2) {
+                    if (response.license_plate.length >= 7) {
                         console.log(response)
                         addImageToLog(response.filename, response.license_plate, response.result[1].Color,
                             response.result[1].Car_Type, response.result[0]);
